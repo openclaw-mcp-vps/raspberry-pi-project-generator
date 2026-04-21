@@ -1,0 +1,588 @@
+[
+  {
+    "id": "smart-plant-monitor",
+    "title": "Smart Plant Monitor",
+    "summary": "Track soil moisture and trigger watering alerts before your plants dry out.",
+    "difficulty": "beginner",
+    "estimatedTime": "2-3 hours",
+    "interests": ["gardening", "monitoring", "home-automation"],
+    "requiredComponents": ["raspberry-pi", "soil-moisture", "breadboard", "jumper-wires", "resistor-kit"],
+    "optionalComponents": ["oled-display", "relay-module"],
+    "overview": "This project samples soil moisture every 15 minutes, logs the readings, and alerts you when the plant needs water. Add a relay module later to automate a pump.",
+    "steps": [
+      {
+        "title": "Prepare the Pi and enable GPIO",
+        "detail": "Update Raspberry Pi OS, install Python dependencies, and verify GPIO access with a simple blink test."
+      },
+      {
+        "title": "Wire the moisture sensor",
+        "detail": "Connect VCC, GND, and output signal to a safe GPIO input path using the resistor network from your kit."
+      },
+      {
+        "title": "Calibrate dry and wet thresholds",
+        "detail": "Record analog-like readings in dry air and fully wet soil so your alert thresholds reflect your actual sensor."
+      },
+      {
+        "title": "Run continuous sampler",
+        "detail": "Schedule a loop that logs moisture percentage and stores data to CSV for trend analysis."
+      },
+      {
+        "title": "Add alerts",
+        "detail": "Send terminal alerts (or optional webhook notifications) when moisture drops below your threshold for two consecutive checks."
+      }
+    ],
+    "codeExample": "import time\nfrom gpiozero import DigitalInputDevice\n\nMOISTURE_PIN = 17\nsensor = DigitalInputDevice(MOISTURE_PIN, pull_up=True)\n\nDRY_ALERT_SECONDS = 60\ndry_since = None\n\nwhile True:\n    is_dry = sensor.value == 1\n    now = time.time()\n\n    if is_dry:\n        dry_since = dry_since or now\n        if now - dry_since > DRY_ALERT_SECONDS:\n            print(\"Soil is dry. Time to water your plant.\")\n    else:\n        dry_since = None\n        print(\"Moisture level looks healthy.\")\n\n    time.sleep(5)",
+    "wiring": {
+      "notes": "Capacitive moisture sensors are more reliable than resistive probes and corrode less over time.",
+      "connections": [
+        {
+          "from": "Sensor VCC",
+          "to": "Pi 3.3V",
+          "color": "Red",
+          "purpose": "Power"
+        },
+        {
+          "from": "Sensor GND",
+          "to": "Pi GND",
+          "color": "Black",
+          "purpose": "Ground reference"
+        },
+        {
+          "from": "Sensor D0",
+          "to": "Pi GPIO17",
+          "color": "Yellow",
+          "purpose": "Dry/wet signal"
+        }
+      ]
+    },
+    "deliverables": [
+      "Moisture alert script running on boot",
+      "Calibrated dry/wet threshold values",
+      "Daily moisture trend log"
+    ]
+  },
+  {
+    "id": "room-climate-dashboard",
+    "title": "Room Climate Dashboard",
+    "summary": "Build a live indoor climate dashboard with temperature, humidity, and pressure trends.",
+    "difficulty": "beginner",
+    "estimatedTime": "2 hours",
+    "interests": ["monitoring", "smart-home", "iot"],
+    "requiredComponents": ["raspberry-pi", "bme280", "oled-display", "breadboard", "jumper-wires"],
+    "optionalComponents": ["sd-card"],
+    "overview": "Create a compact desk dashboard that polls the BME280 every few seconds and displays key readings on an OLED panel.",
+    "steps": [
+      {
+        "title": "Enable I2C on Raspberry Pi",
+        "detail": "Use raspi-config to enable I2C and verify the BME280 appears with i2cdetect."
+      },
+      {
+        "title": "Wire BME280 and OLED",
+        "detail": "Share SDA/SCL lines and connect power/ground for both devices on the same I2C bus."
+      },
+      {
+        "title": "Install display and sensor libraries",
+        "detail": "Install adafruit-circuitpython-bme280 and luma.oled for reading and rendering values."
+      },
+      {
+        "title": "Render real-time dashboard",
+        "detail": "Display temperature, humidity, and pressure with min/max values from the current session."
+      },
+      {
+        "title": "Set auto-start service",
+        "detail": "Create a systemd unit so the dashboard restarts automatically after reboot."
+      }
+    ],
+    "codeExample": "import time\nimport board\nimport busio\nimport adafruit_bme280\n\ni2c = busio.I2C(board.SCL, board.SDA)\nbme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=0x76)\n\nwhile True:\n    print(f\"Temp: {bme280.temperature:.1f} C\")\n    print(f\"Humidity: {bme280.humidity:.1f}%\")\n    print(f\"Pressure: {bme280.pressure:.1f} hPa\")\n    print(\"---\")\n    time.sleep(2)",
+    "wiring": {
+      "notes": "Keep I2C wires short to avoid flaky reads.",
+      "connections": [
+        {
+          "from": "BME280 VIN",
+          "to": "Pi 3.3V",
+          "color": "Red",
+          "purpose": "Power"
+        },
+        {
+          "from": "BME280 GND",
+          "to": "Pi GND",
+          "color": "Black",
+          "purpose": "Ground"
+        },
+        {
+          "from": "BME280 SDA",
+          "to": "Pi GPIO2 (SDA)",
+          "color": "Blue",
+          "purpose": "I2C data"
+        },
+        {
+          "from": "BME280 SCL",
+          "to": "Pi GPIO3 (SCL)",
+          "color": "Green",
+          "purpose": "I2C clock"
+        },
+        {
+          "from": "OLED SDA",
+          "to": "Pi GPIO2 (SDA)",
+          "color": "Blue",
+          "purpose": "Shared I2C data"
+        },
+        {
+          "from": "OLED SCL",
+          "to": "Pi GPIO3 (SCL)",
+          "color": "Green",
+          "purpose": "Shared I2C clock"
+        }
+      ]
+    },
+    "deliverables": [
+      "Real-time OLED climate panel",
+      "Environment data sampling script",
+      "Optional long-term log file for trends"
+    ]
+  },
+  {
+    "id": "ultrasonic-parking-assistant",
+    "title": "Ultrasonic Parking Assistant",
+    "summary": "Measure car-to-wall distance and provide color LED proximity feedback.",
+    "difficulty": "beginner",
+    "estimatedTime": "3 hours",
+    "interests": ["automotive", "robotics", "measurement"],
+    "requiredComponents": ["raspberry-pi", "ultrasonic-sensor", "led-kit", "resistor-kit", "breadboard", "jumper-wires"],
+    "optionalComponents": ["speaker"],
+    "overview": "Turn your garage into a guided parking bay with visual distance zones and optional beeping alerts.",
+    "steps": [
+      {
+        "title": "Wire HC-SR04 with level-safe echo path",
+        "detail": "Use a resistor divider on ECHO before connecting to Pi GPIO to protect 3.3V logic pins."
+      },
+      {
+        "title": "Build LED distance indicator",
+        "detail": "Assign green/yellow/red LEDs to safe/caution/stop distance ranges."
+      },
+      {
+        "title": "Implement distance sampling",
+        "detail": "Trigger ultrasonic pulse, measure echo time, and convert to centimeters."
+      },
+      {
+        "title": "Tune distance thresholds",
+        "detail": "Adjust trigger points to match your garage and car dimensions."
+      },
+      {
+        "title": "Mount and test",
+        "detail": "Position sensor at bumper height and run parking trials for consistent readings."
+      }
+    ],
+    "codeExample": "import time\nfrom gpiozero import DistanceSensor, LED\n\nsensor = DistanceSensor(echo=24, trigger=23, max_distance=3)\nled_green = LED(5)\nled_yellow = LED(6)\nled_red = LED(13)\n\nwhile True:\n    distance_cm = sensor.distance * 100\n\n    led_green.off(); led_yellow.off(); led_red.off()\n\n    if distance_cm > 120:\n        led_green.on()\n    elif distance_cm > 60:\n        led_yellow.on()\n    else:\n        led_red.on()\n\n    print(f\"Distance: {distance_cm:.1f} cm\")\n    time.sleep(0.2)",
+    "wiring": {
+      "notes": "Add a 1k/2k voltage divider on ECHO line to keep Pi input safe.",
+      "connections": [
+        {
+          "from": "HC-SR04 VCC",
+          "to": "Pi 5V",
+          "color": "Red",
+          "purpose": "Sensor power"
+        },
+        {
+          "from": "HC-SR04 GND",
+          "to": "Pi GND",
+          "color": "Black",
+          "purpose": "Ground"
+        },
+        {
+          "from": "HC-SR04 TRIG",
+          "to": "Pi GPIO23",
+          "color": "Yellow",
+          "purpose": "Trigger pulse"
+        },
+        {
+          "from": "HC-SR04 ECHO (via divider)",
+          "to": "Pi GPIO24",
+          "color": "Orange",
+          "purpose": "Echo read"
+        }
+      ]
+    },
+    "deliverables": [
+      "Distance-aware LED parking indicator",
+      "Calibrated garage thresholds",
+      "Optional audible warning extension"
+    ]
+  },
+  {
+    "id": "motion-alert-camera",
+    "title": "Motion Alert Camera",
+    "summary": "Capture images when motion is detected and keep timestamped evidence clips.",
+    "difficulty": "intermediate",
+    "estimatedTime": "4-5 hours",
+    "interests": ["security", "computer-vision", "home-automation"],
+    "requiredComponents": ["raspberry-pi", "camera-module", "pir-sensor", "jumper-wires", "sd-card"],
+    "optionalComponents": ["usb-microphone"],
+    "overview": "Pair a PIR sensor with the Pi camera to create a low-cost smart security watcher for entryways or garages.",
+    "steps": [
+      {
+        "title": "Attach and test camera",
+        "detail": "Enable camera interface and verify still capture with libcamera-still."
+      },
+      {
+        "title": "Wire PIR sensor",
+        "detail": "Connect PIR output to GPIO input and validate state changes with a quick test script."
+      },
+      {
+        "title": "Capture on trigger",
+        "detail": "Create a script that saves timestamped image bursts when motion is detected."
+      },
+      {
+        "title": "Add cooldown and retention policy",
+        "detail": "Avoid repeated triggers every second and auto-delete old files to conserve space."
+      },
+      {
+        "title": "Harden service for 24/7 run",
+        "detail": "Create a systemd service with restart policy and log rotation."
+      }
+    ],
+    "codeExample": "from datetime import datetime\nfrom pathlib import Path\nfrom gpiozero import MotionSensor\nfrom picamera2 import Picamera2\nimport time\n\nout_dir = Path(\"captures\")\nout_dir.mkdir(exist_ok=True)\n\npir = MotionSensor(18)\ncamera = Picamera2()\ncamera.configure(camera.create_still_configuration())\ncamera.start()\n\nlast_capture = 0\nCOOLDOWN = 10\n\nwhile True:\n    if pir.motion_detected and time.time() - last_capture > COOLDOWN:\n        stamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n        file_path = out_dir / f\"motion_{stamp}.jpg\"\n        camera.capture_file(str(file_path))\n        print(f\"Captured {file_path}\")\n        last_capture = time.time()\n\n    time.sleep(0.2)",
+    "wiring": {
+      "notes": "Allow PIR sensor to warm up for 30-60 seconds before relying on detections.",
+      "connections": [
+        {
+          "from": "PIR VCC",
+          "to": "Pi 5V",
+          "color": "Red",
+          "purpose": "Power"
+        },
+        {
+          "from": "PIR GND",
+          "to": "Pi GND",
+          "color": "Black",
+          "purpose": "Ground"
+        },
+        {
+          "from": "PIR OUT",
+          "to": "Pi GPIO18",
+          "color": "Purple",
+          "purpose": "Motion trigger"
+        },
+        {
+          "from": "Camera ribbon",
+          "to": "Pi CSI port",
+          "color": "Ribbon",
+          "purpose": "Image data"
+        }
+      ]
+    },
+    "deliverables": [
+      "Motion-triggered image capture pipeline",
+      "Timestamped security image archive",
+      "Auto-start surveillance service"
+    ]
+  },
+  {
+    "id": "voice-controlled-lighting",
+    "title": "Voice-Controlled Lighting",
+    "summary": "Turn a desk lamp on/off with offline voice commands.",
+    "difficulty": "intermediate",
+    "estimatedTime": "5-6 hours",
+    "interests": ["voice-assistant", "home-automation", "smart-home"],
+    "requiredComponents": ["raspberry-pi", "usb-microphone", "relay-module", "jumper-wires", "speaker"],
+    "optionalComponents": ["oled-display"],
+    "overview": "Use offline speech recognition to trigger relay-based lamp control without relying on cloud APIs.",
+    "steps": [
+      {
+        "title": "Configure microphone and audio output",
+        "detail": "Set default ALSA input/output devices and test with arecord and aplay."
+      },
+      {
+        "title": "Wire relay control channel",
+        "detail": "Connect relay IN pin to GPIO and verify relay toggles using a basic Python script."
+      },
+      {
+        "title": "Install speech recognition runtime",
+        "detail": "Install Vosk and load a compact offline model optimized for command recognition."
+      },
+      {
+        "title": "Map commands to actions",
+        "detail": "Support phrases like \"lights on\" and \"lights off\" with confidence threshold checks."
+      },
+      {
+        "title": "Add failsafe timeout",
+        "detail": "Ensure relay defaults to off after reboot or script crash to avoid unsafe behavior."
+      }
+    ],
+    "codeExample": "import json\nfrom gpiozero import OutputDevice\n\nrelay = OutputDevice(22, active_high=False, initial_value=False)\n\ndef handle_command(text: str) -> None:\n    cleaned = text.lower().strip()\n    if \"lights on\" in cleaned:\n        relay.on()\n        print(\"Lamp switched on\")\n    elif \"lights off\" in cleaned:\n        relay.off()\n        print(\"Lamp switched off\")\n\n# Example transcript events from speech recognizer\nfor payload in [\"{\\\"text\\\": \\\"lights on\\\"}\", \"{\\\"text\\\": \\\"lights off\\\"}\"]:\n    text = json.loads(payload)[\"text\"]\n    handle_command(text)",
+    "wiring": {
+      "notes": "Only switch properly isolated mains-rated loads through certified relay hardware.",
+      "connections": [
+        {
+          "from": "Relay VCC",
+          "to": "Pi 5V",
+          "color": "Red",
+          "purpose": "Relay board power"
+        },
+        {
+          "from": "Relay GND",
+          "to": "Pi GND",
+          "color": "Black",
+          "purpose": "Ground"
+        },
+        {
+          "from": "Relay IN",
+          "to": "Pi GPIO22",
+          "color": "Yellow",
+          "purpose": "Switch control signal"
+        }
+      ]
+    },
+    "deliverables": [
+      "Offline voice command parser",
+      "Relay-driven lamp control",
+      "Safety-focused startup defaults"
+    ]
+  },
+  {
+    "id": "smart-doorbell-monitor",
+    "title": "Smart Doorbell Monitor",
+    "summary": "Capture a snapshot and play a custom chime whenever the doorbell button is pressed.",
+    "difficulty": "intermediate",
+    "estimatedTime": "3-4 hours",
+    "interests": ["security", "iot", "smart-home"],
+    "requiredComponents": ["raspberry-pi", "button", "camera-module", "speaker", "jumper-wires", "resistor-kit"],
+    "optionalComponents": ["pir-sensor"],
+    "overview": "Create a modern doorbell workflow with image capture, timestamp logging, and local sound feedback.",
+    "steps": [
+      {
+        "title": "Wire the button with pull-down resistor",
+        "detail": "Use a stable GPIO input circuit to avoid accidental triggers."
+      },
+      {
+        "title": "Capture image on press",
+        "detail": "Connect button interrupt to camera snapshot logic and save files by date folder."
+      },
+      {
+        "title": "Play local chime",
+        "detail": "Trigger a WAV file playback through your powered speaker when events occur."
+      },
+      {
+        "title": "Record event log",
+        "detail": "Save button presses with timestamps and image filenames for quick review."
+      }
+    ],
+    "codeExample": "from datetime import datetime\nfrom gpiozero import Button\n\nbutton = Button(25, pull_up=False)\n\ndef on_press() -> None:\n    stamp = datetime.now().isoformat(timespec=\"seconds\")\n    print(f\"Doorbell pressed at {stamp}\")\n    # capture_image(stamp)\n    # play_chime()\n\nbutton.when_pressed = on_press\nprint(\"Doorbell monitor armed\")\nbutton.wait_for_press()",
+    "wiring": {
+      "notes": "Use debouncing in software to prevent duplicate logs from noisy mechanical buttons.",
+      "connections": [
+        {
+          "from": "Button leg A",
+          "to": "Pi 3.3V",
+          "color": "Red",
+          "purpose": "Input high"
+        },
+        {
+          "from": "Button leg B",
+          "to": "Pi GPIO25",
+          "color": "White",
+          "purpose": "Button signal"
+        },
+        {
+          "from": "GPIO25 through 10k resistor",
+          "to": "Pi GND",
+          "color": "Brown",
+          "purpose": "Pull-down"
+        }
+      ]
+    },
+    "deliverables": [
+      "Doorbell press event logger",
+      "Snapshot capture per press",
+      "Local chime feedback"
+    ]
+  },
+  {
+    "id": "timelapse-wildlife-station",
+    "title": "Timelapse Wildlife Station",
+    "summary": "Build an outdoor timelapse station that shoots on schedule and motion events.",
+    "difficulty": "advanced",
+    "estimatedTime": "6-8 hours",
+    "interests": ["photography", "monitoring", "automation"],
+    "requiredComponents": ["raspberry-pi", "camera-module", "rtc-module", "sd-card", "pir-sensor"],
+    "optionalComponents": ["solar-power", "oled-display"],
+    "overview": "Combine scheduled captures with motion-triggered bursts to monitor bird feeders, garden beds, or wildlife trails.",
+    "steps": [
+      {
+        "title": "Install weather-safe enclosure",
+        "detail": "Mount the camera and sensor in a splash-resistant enclosure with clear lens window."
+      },
+      {
+        "title": "Sync RTC fallback clock",
+        "detail": "Configure DS3231 as fallback time source for reliable scheduling without internet."
+      },
+      {
+        "title": "Implement capture scheduler",
+        "detail": "Shoot stills every fixed interval and append motion-event bursts when PIR triggers."
+      },
+      {
+        "title": "Add storage retention rules",
+        "detail": "Keep full-resolution recent files and downsample or archive older captures."
+      },
+      {
+        "title": "Generate daily timelapse",
+        "detail": "Batch images into a compressed video with ffmpeg as overnight maintenance task."
+      }
+    ],
+    "codeExample": "from datetime import datetime\nfrom pathlib import Path\n\ncapture_root = Path(\"wildlife\")\ncapture_root.mkdir(exist_ok=True)\n\ndef capture_frame(tag: str) -> Path:\n    stamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n    file_path = capture_root / f\"{tag}_{stamp}.jpg\"\n    # camera.capture_file(file_path)\n    print(f\"Captured {file_path}\")\n    return file_path\n\ncapture_frame(\"scheduled\")",
+    "wiring": {
+      "notes": "If deployed outdoors, include surge protection and strain relief on cables.",
+      "connections": [
+        {
+          "from": "RTC VCC",
+          "to": "Pi 3.3V",
+          "color": "Red",
+          "purpose": "RTC power"
+        },
+        {
+          "from": "RTC SDA",
+          "to": "Pi GPIO2 (SDA)",
+          "color": "Blue",
+          "purpose": "I2C data"
+        },
+        {
+          "from": "RTC SCL",
+          "to": "Pi GPIO3 (SCL)",
+          "color": "Green",
+          "purpose": "I2C clock"
+        },
+        {
+          "from": "PIR OUT",
+          "to": "Pi GPIO18",
+          "color": "Yellow",
+          "purpose": "Motion trigger"
+        }
+      ]
+    },
+    "deliverables": [
+      "Scheduled + event-driven capture workflow",
+      "Daily timelapse export",
+      "Storage retention automation"
+    ]
+  },
+  {
+    "id": "led-music-visualizer",
+    "title": "LED Music Visualizer",
+    "summary": "Sync NeoPixel animations to live audio with beat-sensitive color transitions.",
+    "difficulty": "advanced",
+    "estimatedTime": "5-7 hours",
+    "interests": ["audio", "lighting", "creative-coding"],
+    "requiredComponents": ["raspberry-pi", "neopixel-strip", "usb-microphone", "resistor-kit", "jumper-wires"],
+    "optionalComponents": ["speaker"],
+    "overview": "Capture live audio amplitude and frequency bands, then render responsive visual effects across addressable LEDs.",
+    "steps": [
+      {
+        "title": "Wire NeoPixel strip with data resistor",
+        "detail": "Add inline resistor on data line and common ground between Pi and LED power source."
+      },
+      {
+        "title": "Set up audio stream",
+        "detail": "Read microphone frames with PyAudio and compute RMS/FFT features."
+      },
+      {
+        "title": "Map sound energy to colors",
+        "detail": "Use low/mid/high band levels to drive gradient palettes and pulse intensity."
+      },
+      {
+        "title": "Tune smoothing and decay",
+        "detail": "Apply rolling averages to reduce flicker and improve visual quality."
+      },
+      {
+        "title": "Profile CPU usage",
+        "detail": "Balance frame rate and FFT size for stable real-time behavior on your Pi model."
+      }
+    ],
+    "codeExample": "import math\n\ndef normalize(level: float, min_level: float, max_level: float) -> float:\n    span = max_level - min_level\n    if span <= 0:\n        return 0.0\n    return max(0.0, min(1.0, (level - min_level) / span))\n\nfor sample_level in [0.02, 0.08, 0.16, 0.31]:\n    intensity = normalize(sample_level, 0.01, 0.35)\n    brightness = math.floor(intensity * 255)\n    print(f\"Audio={sample_level:.2f} -> LED brightness {brightness}\")",
+    "wiring": {
+      "notes": "Power larger NeoPixel strips from a dedicated 5V supply and share ground with the Pi.",
+      "connections": [
+        {
+          "from": "NeoPixel 5V",
+          "to": "External 5V PSU",
+          "color": "Red",
+          "purpose": "LED power"
+        },
+        {
+          "from": "NeoPixel GND",
+          "to": "Pi GND",
+          "color": "Black",
+          "purpose": "Common ground"
+        },
+        {
+          "from": "NeoPixel DIN (through 330R resistor)",
+          "to": "Pi GPIO18",
+          "color": "Green",
+          "purpose": "Pixel data"
+        }
+      ]
+    },
+    "deliverables": [
+      "Real-time audio-reactive LED engine",
+      "Tunable animation presets",
+      "Performance-safe runtime profile"
+    ]
+  },
+  {
+    "id": "retro-console-launcher",
+    "title": "Retro Console Launcher",
+    "summary": "Turn your Pi into a plug-and-play retro gaming launcher with physical controls.",
+    "difficulty": "beginner",
+    "estimatedTime": "2-4 hours",
+    "interests": ["gaming", "media", "diy"],
+    "requiredComponents": ["raspberry-pi", "sd-card", "button", "jumper-wires", "resistor-kit"],
+    "optionalComponents": ["oled-display", "led-kit"],
+    "overview": "Create a custom launcher control panel that boots into your emulator frontend and supports physical start/reset buttons.",
+    "steps": [
+      {
+        "title": "Flash RetroPie or Batocera",
+        "detail": "Install a gaming image to your high-endurance microSD card and complete first boot setup."
+      },
+      {
+        "title": "Wire start and reset buttons",
+        "detail": "Connect buttons to GPIO with proper pull-down resistors and verify input stability."
+      },
+      {
+        "title": "Map button actions",
+        "detail": "Use a Python daemon to send launcher events such as quick-start game list or safe reset."
+      },
+      {
+        "title": "Polish startup experience",
+        "detail": "Add branded splash screen and auto-launch behavior for living-room-friendly use."
+      }
+    ],
+    "codeExample": "from gpiozero import Button\n\nstart_button = Button(20, pull_up=False)\nreset_button = Button(21, pull_up=False)\n\ndef on_start() -> None:\n    print(\"Start button pressed: opening favorites list\")\n\ndef on_reset() -> None:\n    print(\"Reset button pressed: requesting safe reboot\")\n\nstart_button.when_pressed = on_start\nreset_button.when_pressed = on_reset\n\nprint(\"Retro launcher controls active\")\nstart_button.wait_for_press()",
+    "wiring": {
+      "notes": "Use enclosure-mounted arcade buttons for a durable console feel.",
+      "connections": [
+        {
+          "from": "Start button output",
+          "to": "Pi GPIO20",
+          "color": "White",
+          "purpose": "Launcher start action"
+        },
+        {
+          "from": "Reset button output",
+          "to": "Pi GPIO21",
+          "color": "Orange",
+          "purpose": "Safe reboot action"
+        },
+        {
+          "from": "Each button through 10k resistor",
+          "to": "Pi GND",
+          "color": "Brown",
+          "purpose": "Pull-down stability"
+        }
+      ]
+    },
+    "deliverables": [
+      "Boot-ready retro console",
+      "Physical launcher button controls",
+      "Living-room optimized startup flow"
+    ]
+  }
+]

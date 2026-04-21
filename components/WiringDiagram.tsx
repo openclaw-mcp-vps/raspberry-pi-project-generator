@@ -1,48 +1,36 @@
-import { WiringConnection } from "@/types/project";
+import type { ProjectWiringDiagram } from "@/lib/types";
 
 interface WiringDiagramProps {
-  wiring: WiringConnection[];
+  diagram: ProjectWiringDiagram;
 }
 
-export function WiringDiagram({ wiring }: WiringDiagramProps): React.ReactElement {
+export default function WiringDiagram({ diagram }: WiringDiagramProps) {
   return (
-    <div className="rounded-2xl border border-[#2b3340] bg-[#0d1117] p-4">
-      <h3 className="mb-4 text-lg font-semibold">Wiring Map</h3>
-      <svg viewBox="0 0 720 320" className="h-auto w-full rounded-xl border border-[#2b3340] bg-[#0a0f15] p-2">
-        <rect x="28" y="24" width="220" height="268" rx="18" fill="#151f2f" stroke="#2b3340" />
-        <text x="48" y="55" fill="#9fd3ff" fontSize="18" fontWeight="700">
-          Raspberry Pi GPIO
-        </text>
-
-        <rect x="468" y="24" width="220" height="268" rx="18" fill="#142318" stroke="#2b3340" />
-        <text x="488" y="55" fill="#96f5bf" fontSize="18" fontWeight="700">
-          Modules
-        </text>
-
-        {wiring.slice(0, 6).map((connection, index) => {
-          const y = 90 + index * 34;
-          return (
-            <g key={`${connection.from}-${connection.to}-${index}`}>
-              <text x="48" y={y} fill="#dbe7ff" fontSize="13">
-                {connection.from}
-              </text>
-              <line x1="230" y1={y - 5} x2="470" y2={y - 5} stroke="#4db2ff" strokeWidth="2" strokeDasharray="5 4" />
-              <text x="488" y={y} fill="#d7ffe7" fontSize="13">
-                {connection.to}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-      <div className="mt-3 space-y-2 text-sm text-[#9aa4b2]">
-        {wiring.map((item, idx) => (
-          <p key={`${item.from}-${item.to}-${idx}`}>
-            <span className="font-medium text-[#f5f8ff]">
-              {item.from} → {item.to}:
-            </span>{" "}
-            {item.note}
-          </p>
-        ))}
+    <div className="space-y-4">
+      <p className="rounded-lg border border-[#30363d] bg-[#0d1117]/70 p-3 text-sm text-slate-300">
+        {diagram.notes}
+      </p>
+      <div className="overflow-x-auto rounded-lg border border-[#30363d]">
+        <table className="min-w-full divide-y divide-[#30363d] text-left text-sm">
+          <thead className="bg-[#0d1117] text-slate-200">
+            <tr>
+              <th className="px-4 py-3 font-medium">From</th>
+              <th className="px-4 py-3 font-medium">To</th>
+              <th className="px-4 py-3 font-medium">Wire color</th>
+              <th className="px-4 py-3 font-medium">Purpose</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#30363d] bg-[#161b22]/75 text-slate-300">
+            {diagram.connections.map((connection) => (
+              <tr key={`${connection.from}-${connection.to}-${connection.color}`}>
+                <td className="px-4 py-3">{connection.from}</td>
+                <td className="px-4 py-3">{connection.to}</td>
+                <td className="px-4 py-3">{connection.color}</td>
+                <td className="px-4 py-3">{connection.purpose}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

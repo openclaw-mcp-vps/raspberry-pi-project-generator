@@ -1,83 +1,119 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { WiringDiagram } from "@/components/WiringDiagram";
-import { getProjectById } from "@/lib/database";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, Code2, Clock3, ListChecks, Wrench } from "lucide-react";
+import WiringDiagram from "@/components/WiringDiagram";
+import { getProjectById } from "@/lib/projectGenerator";
 
-interface ProjectPageProps {
-  params: Promise<{ id: string }>;
-}
+type Params = Promise<{ id: string }>;
 
-export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params
+}: {
+  params: Params;
+}): Promise<Metadata> {
   const { id } = await params;
-  const project = await getProjectById(id);
+  const project = getProjectById(id);
 
   if (!project) {
-    return { title: "Project not found" };
+    return {
+      title: "Project not found"
+    };
   }
 
   return {
-    title: `${project.title} | Raspberry Pi Build Guide`,
-    description: project.summary
+    title: project.title,
+    description: project.summary,
+    openGraph: {
+      title: `${project.title} | Raspberry Pi Project Generator`,
+      description: project.summary
+    }
   };
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps): Promise<React.ReactElement> {
+export default async function ProjectDetailPage({
+  params
+}: {
+  params: Params;
+}) {
   const { id } = await params;
-  const project = await getProjectById(id);
+  const project = getProjectById(id);
 
   if (!project) {
     notFound();
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-6 pb-20 pt-10">
-      <div className="rounded-2xl border border-[#2b3340] bg-[#111827]/80 p-6">
-        <p className="text-xs uppercase tracking-[0.12em] text-[#79c7ff]">Generated Build Guide</p>
-        <h1 className="mt-3 text-3xl font-black">{project.title}</h1>
-        <p className="mt-3 text-[#c5d1e3]">{project.summary}</p>
-        <p className="mt-3 text-sm text-[#9aa4b2]">
-          Difficulty: <span className="font-semibold text-[#f5f8ff]">{project.difficulty}</span> | Estimated time:{" "}
-          <span className="font-semibold text-[#f5f8ff]">{project.estimatedBuildTime}</span>
-        </p>
-      </div>
+    <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8">
+      <Link
+        href="/generator"
+        className="mb-6 inline-flex items-center gap-2 text-sm text-blue-300 transition hover:text-blue-200"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to generator
+      </Link>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-2">
-        <article className="rounded-2xl border border-[#2b3340] bg-[#111827]/80 p-6">
-          <h2 className="text-xl font-bold">Required Components</h2>
-          <ul className="mt-4 space-y-2 text-sm text-[#d9e6fb]">
-            {project.requiredComponents.map((component) => (
-              <li key={component}>- {component}</li>
-            ))}
-          </ul>
+      <section className="rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-7">
+        <p className="text-xs uppercase tracking-[0.18em] text-blue-300">{project.difficulty}</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{project.title}</h1>
+        <p className="mt-4 text-slate-300">{project.overview}</p>
 
-          <h2 className="mt-8 text-xl font-bold">Learning Outcomes</h2>
-          <ul className="mt-4 space-y-2 text-sm text-[#d9e6fb]">
-            {project.learningOutcomes.map((item) => (
-              <li key={item}>- {item}</li>
-            ))}
-          </ul>
-        </article>
-
-        <WiringDiagram wiring={project.wiring} />
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border border-[#30363d] bg-[#0d1117]/70 p-4 text-sm text-slate-300">
+            <p className="inline-flex items-center gap-2 font-medium text-slate-100">
+              <Clock3 className="h-4 w-4 text-blue-300" /> Estimated time
+            </p>
+            <p className="mt-1">{project.estimatedTime}</p>
+          </div>
+          <div className="rounded-lg border border-[#30363d] bg-[#0d1117]/70 p-4 text-sm text-slate-300">
+            <p className="inline-flex items-center gap-2 font-medium text-slate-100">
+              <Wrench className="h-4 w-4 text-blue-300" /> Required components
+            </p>
+            <p className="mt-1">{project.requiredComponents.length} parts</p>
+          </div>
+        </div>
       </section>
 
-      <section className="mt-8 rounded-2xl border border-[#2b3340] bg-[#111827]/80 p-6">
-        <h2 className="text-xl font-bold">Build Steps</h2>
-        <div className="mt-4 space-y-4">
+      <section className="mt-8 rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-7">
+        <h2 className="inline-flex items-center gap-2 text-xl font-semibold">
+          <ListChecks className="h-5 w-5 text-blue-300" /> Build steps
+        </h2>
+        <ol className="mt-5 space-y-4">
           {project.steps.map((step, index) => (
-            <article key={`${step.title}-${index}`} className="rounded-xl border border-[#2b3340] bg-[#0d1117] p-4">
-              <h3 className="text-lg font-semibold">
-                {index + 1}. {step.title}
-              </h3>
-              <p className="mt-2 text-sm text-[#c8d4e5]">{step.details}</p>
-              {step.codeExample ? (
-                <pre className="mt-3 overflow-x-auto rounded-lg border border-[#2b3340] bg-[#0a0f15] p-3 text-xs text-[#c8f2d8]">
-                  <code>{step.codeExample}</code>
-                </pre>
-              ) : null}
-            </article>
+            <li key={step.title} className="rounded-lg border border-[#30363d] bg-[#0d1117]/70 p-4">
+              <p className="text-sm text-blue-300">Step {index + 1}</p>
+              <h3 className="mt-1 text-lg font-medium">{step.title}</h3>
+              <p className="mt-2 text-sm text-slate-300">{step.detail}</p>
+            </li>
           ))}
+        </ol>
+      </section>
+
+      <section className="mt-8 rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-7">
+        <h2 className="inline-flex items-center gap-2 text-xl font-semibold">
+          <Code2 className="h-5 w-5 text-blue-300" /> Starter code
+        </h2>
+        <pre className="mt-4 overflow-x-auto rounded-lg border border-[#30363d] bg-[#0d1117] p-4 text-sm text-slate-200">
+          <code>{project.codeExample}</code>
+        </pre>
+      </section>
+
+      <section className="mt-8 rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-7">
+        <h2 className="text-xl font-semibold">Wiring diagram</h2>
+        <div className="mt-4">
+          <WiringDiagram diagram={project.wiring} />
         </div>
+      </section>
+
+      <section className="mt-8 rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-7">
+        <h2 className="text-xl font-semibold">Deliverables checklist</h2>
+        <ul className="mt-4 space-y-2 text-sm text-slate-300">
+          {project.deliverables.map((deliverable) => (
+            <li key={deliverable} className="rounded-md border border-[#30363d] bg-[#0d1117]/70 px-3 py-2">
+              {deliverable}
+            </li>
+          ))}
+        </ul>
       </section>
     </main>
   );

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "raspberry-pi",
+    "name": "Raspberry Pi (any model with GPIO)",
+    "category": "Core",
+    "description": "Main compute board that runs Linux and controls GPIO."
+  },
+  {
+    "id": "breadboard",
+    "name": "Breadboard",
+    "category": "Core",
+    "description": "Lets you build and test circuits without soldering."
+  },
+  {
+    "id": "jumper-wires",
+    "name": "Jumper wires",
+    "category": "Core",
+    "description": "Male/female jumpers for connecting GPIO pins to components."
+  },
+  {
+    "id": "led-kit",
+    "name": "LED kit",
+    "category": "Output",
+    "description": "Single-color LEDs for visual alerts and status indicators."
+  },
+  {
+    "id": "resistor-kit",
+    "name": "Resistor kit",
+    "category": "Core",
+    "description": "Includes common resistor values for pull-up/down and LED protection."
+  },
+  {
+    "id": "button",
+    "name": "Momentary push button",
+    "category": "Input",
+    "description": "Basic tactile switch for user input."
+  },
+  {
+    "id": "dht22",
+    "name": "DHT22 sensor",
+    "category": "Sensor",
+    "description": "Measures temperature and humidity with simple digital output."
+  },
+  {
+    "id": "bme280",
+    "name": "BME280 sensor",
+    "category": "Sensor",
+    "description": "Measures temperature, humidity, and pressure over I2C."
+  },
+  {
+    "id": "relay-module",
+    "name": "1-channel relay module",
+    "category": "Output",
+    "description": "Switches external loads like lamps, fans, and pumps."
+  },
+  {
+    "id": "pir-sensor",
+    "name": "PIR motion sensor",
+    "category": "Sensor",
+    "description": "Detects motion by sensing infrared changes."
+  },
+  {
+    "id": "servo-motor",
+    "name": "Servo motor",
+    "category": "Actuator",
+    "description": "Rotates to specific angles via PWM control."
+  },
+  {
+    "id": "camera-module",
+    "name": "Raspberry Pi camera module",
+    "category": "Sensor",
+    "description": "Captures photos/video using CSI interface."
+  },
+  {
+    "id": "ultrasonic-sensor",
+    "name": "HC-SR04 ultrasonic sensor",
+    "category": "Sensor",
+    "description": "Measures distance using ultrasonic pulses."
+  },
+  {
+    "id": "oled-display",
+    "name": "0.96\" I2C OLED display",
+    "category": "Output",
+    "description": "Compact display for status dashboards and readouts."
+  },
+  {
+    "id": "neopixel-strip",
+    "name": "WS2812B NeoPixel strip",
+    "category": "Output",
+    "description": "Addressable RGB LEDs for effects and visualizations."
+  },
+  {
+    "id": "speaker",
+    "name": "Small powered speaker",
+    "category": "Output",
+    "description": "Audio playback for alerts and voice responses."
+  },
+  {
+    "id": "usb-microphone",
+    "name": "USB microphone",
+    "category": "Input",
+    "description": "Captures audio for speech commands or analysis."
+  },
+  {
+    "id": "soil-moisture",
+    "name": "Capacitive soil moisture sensor",
+    "category": "Sensor",
+    "description": "Reads moisture levels for plant-watering automations."
+  },
+  {
+    "id": "rtc-module",
+    "name": "RTC module (DS3231)",
+    "category": "Core",
+    "description": "Maintains accurate time even without network connectivity."
+  },
+  {
+    "id": "sd-card",
+    "name": "High-endurance microSD card",
+    "category": "Core",
+    "description": "Reliable storage for logs, images, and long-running projects."
+  }
+]

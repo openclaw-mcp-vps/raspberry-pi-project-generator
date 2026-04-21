@@ -1,34 +1,50 @@
-import crypto from "node:crypto";
-import { lemonSqueezySetup } from "@lemonsqueezy/lemonsqueezy.js";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
-lemonSqueezySetup({
-  apiKey: process.env.LEMON_SQUEEZY_API_KEY,
-  onError: (error) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Lemon Squeezy setup warning:", error.message);
-    }
-  }
-});
+function constantTimeHexCompare(a: string, b: string): boolean {
+  const first = Buffer.from(a, "utf8");
+  const second = Buffer.from(b, "utf8");
 
-export function verifyLemonSqueezySignature(rawBody: string, signature: string | null): boolean {
-  const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
-  if (!secret || !signature) {
+  if (first.length !== second.length) {
     return false;
   }
 
-  const digest = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-  return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));
+  return timingSafeEqual(first, second);
 }
 
-export function buildCheckoutUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_LEMON_SQUEEZY_PRODUCT_ID ?? "";
-  if (raw.startsWith("http://") || raw.startsWith("https://")) {
-    return raw;
+export function verifyLemonSqueezySignature(
+  rawBody: string,
+  signatureHeader: string | null,
+  secret: string
+): boolean {
+  if (!signatureHeader) {
+    return false;
   }
 
-  if (!raw) {
-    return "";
+  const digest = createHmac("sha256", secret).update(rawBody).digest("hex");
+  return constantTimeHexCompare(signatureHeader, digest);
+}
+
+export function verifyStripeSignature(
+  rawBody: string,
+  signatureHeader: string | null,
+  secret: string
+): boolean {
+  if (!signatureHeader) {
+    return false;
   }
 
-  return `https://app.lemonsqueezy.com/checkout/buy/${raw}`;
+  const parts = signatureHeader.split(",").map((part) => part.trim());
+  const timestamp = parts.find((part) => part.startsWith("t="))?.slice(2);
+  const signatures = parts
+    .filter((part) => part.startsWith("v1="))
+    .map((part) => part.slice(3));
+
+  if (!timestamp || signatures.length === 0) {
+    return false;
+  }
+
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const expected = createHmac("sha256", secret).update(signedPayload).digest("hex");
+
+  return signatures.some((signature) => constantTimeHexCompare(signature, expected));
 }

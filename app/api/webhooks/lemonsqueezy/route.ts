@@ -1,40 +1,62 @@
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
-import { savePurchase } from "@/lib/database";
-import { verifyLemonSqueezySignature } from "@/lib/lemonsqueezy";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyLemonSqueezySignature, verifyStripeSignature } from "@/lib/lemonsqueezy";
 
-interface LemonPayload {
-  data?: {
-    id?: string;
-    attributes?: {
-      status?: string;
-      user_email?: string;
-    };
-  };
-}
+export async function POST(request: NextRequest) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-export async function POST(request: Request): Promise<NextResponse> {
+  if (!webhookSecret) {
+    return NextResponse.json(
+      { error: "Webhook secret is not configured." },
+      { status: 500 }
+    );
+  }
+
   const rawBody = await request.text();
-  const signature = (await headers()).get("x-signature");
+  const stripeSignature = request.headers.get("stripe-signature");
+  const lemonSignature = request.headers.get("x-signature");
 
-  if (!verifyLemonSqueezySignature(rawBody, signature)) {
-    return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
+  let provider: "stripe" | "lemonsqueezy" | "unknown" = "unknown";
+  let verified = false;
+
+  if (stripeSignature) {
+    provider = "stripe";
+    verified = verifyStripeSignature(rawBody, stripeSignature, webhookSecret);
+  } else if (lemonSignature) {
+    provider = "lemonsqueezy";
+    verified = verifyLemonSqueezySignature(rawBody, lemonSignature, webhookSecret);
   }
 
-  const payload = JSON.parse(rawBody) as LemonPayload;
-  const orderId = payload.data?.id;
-  const status = payload.data?.attributes?.status;
-
-  if (!orderId || status !== "paid") {
-    return NextResponse.json({ received: true });
+  if (!verified) {
+    return NextResponse.json(
+      { error: "Webhook signature verification failed.", provider },
+      { status: 400 }
+    );
   }
 
-  await savePurchase({
-    orderId,
-    email: payload.data?.attributes?.user_email,
-    status: "paid",
-    createdAt: new Date().toISOString()
+  let payload: Record<string, unknown> | null = null;
+
+  try {
+    payload = JSON.parse(rawBody) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json(
+      {
+        error: "Webhook payload is not valid JSON.",
+        provider
+      },
+      { status: 400 }
+    );
+  }
+
+  const eventType =
+    typeof payload.type === "string"
+      ? payload.type
+      : typeof payload.meta === "object" && payload.meta !== null
+        ? String((payload.meta as { event_name?: string }).event_name ?? "unknown")
+        : "unknown";
+
+  return NextResponse.json({
+    received: true,
+    provider,
+    eventType
   });
-
-  return NextResponse.json({ received: true });
 }
